@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CircleBound — Where Relationships Find Their Voice</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ====== ONE SIGNAL SDK V16 ====== -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "f3ab6aa4-d583-496b-81f1-7b21c721e146", // App ID kamu
+        allowLocalhostAsSecureOrigin: true,
+        // subdomainName sudah dihapus karena sekarang pakai link bersih
+      });
+    });
+  </script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+    @keyframes float-delay { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.8); opacity: 0; } }
+    @keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes modal-in { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    .animate-float-delay { animation: float-delay 5s ease-in-out 1s infinite; }
+    .animate-fade-up { animation: fade-up 0.8s ease-out forwards; }
+
+    .pulse-live::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #22C55E; animation: pulse-ring 1.5s ease-out infinite; }
+
+    .gradient-text { background: linear-gradient(135deg, #2563EB, #7C3AED, #EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .gradient-bg-animate { background: linear-gradient(135deg, #2563EB, #7C3AED, #EC4899, #2563EB); background-size: 300% 300%; animation: gradient-shift 8s ease infinite; }
+
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); }
+
+    .nav-blur { backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+    .hero-glow { background: radial-gradient(ellipse at center, rgba(37,99,235,0.08) 0%, transparent 70%); }
+    .hero-glow-2 { background: radial-gradient(ellipse at center, rgba(124,58,237,0.06) 0%, transparent 70%); }
+
+    .room-card { transition: all 0.3s ease; }
+    .room-card:hover { border-color: #2563EB; }
+    .room-card:hover .room-join { background: #2563EB; color: white; }
+
+    .testimonial-card { transition: all 0.3s ease; }
+    .testimonial-card:hover { transform: scale(1.02); }
+
+    .feature-icon-wrap { transition: all 0.3s ease; }
+    .card-hover:hover .feature-icon-wrap { transform: scale(1.1); }
+
+    .modal-overlay { animation: overlay-in 0.2s ease-out forwards; }
+    .modal-content { animation: modal-in 0.3s ease-out forwards; }
+
+    .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffffff; width: 1rem; height: 1rem; animation: spin 0.8s linear infinite; }
+  </style>
+</head>
+<body class="font-sans bg-white text-slate-900 antialiased">
+
+  <!-- ====== NOTIFICATION POPUP MODAL ====== -->
+  <div id="notif-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeNotifModal()"></div>
+    <div class="modal-content relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+      <div class="w-16 h-16 rounded-full gradient-bg-animate flex items-center justify-center mx-auto mb-5">
+        <i data-lucide="bell-ring" class="w-8 h-8 text-white"></i>
+      </div>
+      <h3 class="text-xl font-semibold tracking-tight mb-2">Stay in the Loop 💬</h3>
+      <p class="text-slate-500 leading-relaxed mb-6">Get notified when new circles start, someone replies to your story, or a session you saved is about to begin.</p>
+      <div class="flex flex-col gap-3 mb-4">
+        <button id="allow-notif-btn" onclick="allowNotification()" class="inline-flex items-center justify-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-full transition-all">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span id="allow-notif-text">Allow Notifications</span>
+        </button>
+        <button onclick="closeNotifModal()" class="inline-flex items-center justify-center gap-2 text-sm font-medium text-slate-400 hover:text-slate-600 px-8 py-2 transition-colors">
+          Not right now
+        </button>
+      </div>
+      <button onclick="closeNotifModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== LOADING POPUP MODAL ====== -->
+  <div id="loading-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
+    <div class="modal-content relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+      <div class="flex justify-center mb-5">
+        <div class="relative w-16 h-16">
+          <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+          <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin"></div>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold tracking-tight mb-2">Preparing your space...</h3>
+      <p class="text-sm text-slate-500 leading-relaxed">We're getting things ready for you.</p>
+    </div>
+  </div>
+
+  <!-- ====== MAINTENANCE POPUP MODAL ====== -->
+  <div id="maintenance-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeMaintModal()"></div>
+    <div class="modal-content relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+      <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-5">
+        <i data-lucide="server" class="w-8 h-8 text-amber-500"></i>
+      </div>
+      <h3 class="text-xl font-semibold tracking-tight mb-2">Under Maintenance</h3>
+      <p class="text-slate-500 leading-relaxed mb-6">Our servers are currently undergoing scheduled maintenance. We'll be back up and running shortly. Please try again later.</p>
+      <button onclick="closeMaintModal()" class="inline-flex items-center justify-center gap-2 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 px-8 py-3 rounded-full transition-all">
+        Got it
+      </button>
+      <button onclick="closeMaintModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-white/80 border-b border-slate-100">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="#" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg gradient-bg-animate flex items-center justify-center"><i data-lucide="heart-handshake" class="w-4 h-4 text-white"></i></div>
+          <span class="text-xl font-semibold tracking-tight">CircleBound</span>
+        </a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-sm text-slate-500 hover:text-slate-900 transition-colors">Features</a>
+          <a href="#rooms" class="text-sm text-slate-500 hover:text-slate-900 transition-colors">Live Rooms</a>
+          <a href="#how-it-works" class="text-sm text-slate-500 hover:text-slate-900 transition-colors">How It Works</a>
+          <a href="#stories" class="text-sm text-slate-500 hover:text-slate-900 transition-colors">Stories</a>
+        </div>
+        <div class="hidden md:flex items-center gap-3">
+          <button onclick="openNotifModal()" class="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 transition-colors">Log In</button>
+          <button onclick="openNotifModal()" class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-6 py-2.5 rounded-full transition-all hover:shadow-lg">Join Free</button>
+        </div>
+        <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600 hover:text-slate-900"><i data-lucide="menu" class="w-5 h-5"></i></button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 px-6 pb-4">
+      <div class="flex flex-col gap-3 pt-3">
+        <a href="#features" class="text-sm text-slate-600 py-2">Features</a>
+        <a href="#rooms" class="text-sm text-slate-600 py-2">Live Rooms</a>
+        <a href="#how-it-works" class="text-sm text-slate-600 py-2">How It Works</a>
+        <a href="#stories" class="text-sm text-slate-600 py-2">Stories</a>
+        <div class="flex gap-3 pt-2">
+          <button onclick="openNotifModal()" class="text-sm font-medium text-slate-600 px-4 py-2">Log In</button>
+          <button onclick="openNotifModal()" class="text-sm font-medium text-white bg-blue-600 px-6 py-2.5 rounded-full">Join Free</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center pt-16 overflow-hidden">
+    <div class="absolute top-20 left-1/4 w-96 h-96 hero-glow rounded-full"></div>
+    <div class="absolute top-40 right-1/4 w-80 h-80 hero-glow-2 rounded-full"></div>
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-24 lg:py-32 w-full">
+      <div class="grid lg:grid-cols-2 gap-16 items-center">
+        <div class="animate-fade-up">
+          <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs font-medium uppercase tracking-widest px-4 py-2 rounded-full mb-6">
+            <span class="relative w-2 h-2"><span class="absolute inset-0 bg-green-500 rounded-full pulse-live"></span><span class="relative block w-2 h-2 bg-green-500 rounded-full"></span></span>
+            2,400+ people in circles right now
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.1] tracking-tight mb-6">Your relationships deserve a <span class="gradient-text">safe space</span> to grow</h1>
+          <p class="text-lg lg:text-xl text-slate-500 leading-relaxed mb-8 max-w-lg">Join intimate video circles with people who actually get it. Share your story, get real advice, and find your tribe — no judgment, just connection.</p>
+          <div class="flex flex-col sm:flex-row gap-4 mb-10">
+            <button onclick="openNotifModal()" class="group inline-flex items-center justify-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-full transition-all hover:shadow-xl">Join a Circle Free <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i></button>
+            <button onclick="openNotifModal()" class="group inline-flex items-center justify-center gap-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-8 py-4 rounded-full transition-all"><i data-lucide="play-circle" class="w-4 h-4"></i> See How It Works</button>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="flex -space-x-3">
+              <img src="https://picsum.photos/seed/face1/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt="">
+              <img src="https://picsum.photos/seed/face2/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt="">
+              <img src="https://picsum.photos/seed/face3/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt="">
+              <img src="https://picsum.photos/seed/face4/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt="">
+            </div>
+            <div>
+              <p class="text-sm font-medium text-slate-900">Trusted by 48k+ members</p>
+              <div class="flex items-center gap-1"><i data-lucide="star" class="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"></i><span class="text-xs text-slate-400 ml-1">4.9/5 rating</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="relative animate-float hidden lg:block">
+          <div class="relative">
+            <img src="https://picsum.photos/seed/couple-talk/600/500.jpg" class="w-full h-[500px] object-cover rounded-3xl shadow-2xl" alt="People connecting">
+            <div class="absolute -left-8 top-12 bg-white rounded-2xl shadow-xl p-4 animate-float-delay"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><i data-lucide="video" class="w-5 h-5 text-green-500"></i></div><div><p class="text-xs font-medium text-slate-900">Live Now</p><p class="text-xs text-slate-400">12 circles active</p></div></div></div>
+            <div class="absolute -right-6 bottom-24 bg-white rounded-2xl shadow-xl p-4 animate-float"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center"><i data-lucide="message-circle" class="w-5 h-5 text-purple-500"></i></div><div><p class="text-xs font-medium text-slate-900">New message</p><p class="text-xs text-slate-400">"Thank you all so much 💜"</p></div></div></div>
+            <div class="absolute left-8 -bottom-4 bg-white rounded-2xl shadow-xl p-4 animate-float-delay"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-pink-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-pink-600">A</div><div class="w-7 h-7 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-blue-600">M</div><div class="w-7 h-7 rounded-full bg-green-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-green-600">R</div></div><span class="text-xs text-slate-500">+8 in circle</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="relative bg-slate-50 border-y border-slate-100">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div class="text-center"><p class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">48K+</p><p class="text-sm text-slate-500 mt-1">Active Members</p></div>
+        <div class="text-center"><p class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">5,200+</p><p class="text-sm text-slate-500 mt-1">Circles Created</p></div>
+        <div class="text-center"><p class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">120+</p><p class="text-sm text-slate-500 mt-1">Countries</p></div>
+        <div class="text-center"><p class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">98%</p><p class="text-sm text-slate-500 mt-1">Feel Heard</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <p class="text-xs font-medium uppercase tracking-widest text-blue-600 mb-4">Why CircleBound</p>
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">More than just a chat room</h2>
+        <p class="text-lg text-slate-500 leading-relaxed">We designed every feature around one idea: relationships need real conversations, not just text on a screen.</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-8 group"><div class="feature-icon-wrap w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-5"><i data-lucide="video" class="w-6 h-6 text-blue-600"></i></div><h3 class="text-xl font-semibold tracking-tight mb-2">Live Video Circles</h3><p class="text-slate-500 leading-relaxed">Up to 12 people per room, face-to-face. See real expressions, hear real voices — genuine connection that text can't replicate.</p></div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-8 group"><div class="feature-icon-wrap w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center mb-5"><i data-lucide="shield-check" class="w-6 h-6 text-purple-600"></i></div><h3 class="text-xl font-semibold tracking-tight mb-2">Safe & Moderated</h3><p class="text-slate-500 leading-relaxed">Trained facilitators and AI moderation keep every circle respectful. Zero tolerance for harassment — always.</p></div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-8 group"><div class="feature-icon-wrap w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center mb-5"><i data-lucide="users" class="w-6 h-6 text-pink-600"></i></div><h3 class="text-xl font-semibold tracking-tight mb-2">Matched Circles</h3><p class="text-slate-500 leading-relaxed">Our algorithm groups you with people in similar relationship stages — so every conversation feels relevant to your life.</p></div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-8 group"><div class="feature-icon-wrap w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mb-5"><i data-lucide="lock" class="w-6 h-6 text-amber-600"></i></div><h3 class="text-xl font-semibold tracking-tight mb-2">Anonymous Mode</h3><p class="text-slate-500 leading-relaxed">Not ready to show your face? Join with a pseudonym and avatar. Share your story at your own comfort level.</p></div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-8 group"><div class="feature-icon-wrap w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-5"><i data-lucide="book-open" class="w-6 h-6 text-green-600"></i></div><h3 class="text-xl font-semibold tracking-tight mb-2">Guided Sessions</h3><p class="text-slate-500 leading-relaxed">Expert-led circles with structured prompts and exercises. Navigate tough conversations with professional guidance.</p></div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-8 group"><div class="feature-icon-wrap w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-5"><i data-lucide="globe" class="w-6 h-6 text-indigo-600"></i></div><h3 class="text-xl font-semibold tracking-tight mb-2">Global Community</h3><p class="text-slate-500 leading-relaxed">Connect with people across 120+ countries. Different cultures, different perspectives, same human experience.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Rooms -->
+  <section id="rooms" class="py-24 lg:py-32 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
+        <div><p class="text-xs font-medium uppercase tracking-widest text-blue-600 mb-3">Live Right Now</p><h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Jump into a circle</h2></div>
+        <button onclick="openNotifModal()" class="group inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">View all rooms <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i></button>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="room-card bg-white border border-slate-200 rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Live</span><span class="text-xs text-slate-400">Started 12m ago</span></div><h3 class="text-lg font-semibold tracking-tight mb-2">Navigating a Long-Distance Relationship</h3><p class="text-sm text-slate-500 mb-5">Share your LDR wins and struggles. Let's figure this out together.</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-rose-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-rose-600">S</div><div class="w-7 h-7 rounded-full bg-sky-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-sky-600">J</div><div class="w-7 h-7 rounded-full bg-amber-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-amber-600">K</div></div><span class="text-xs text-slate-400">6/12</span></div><button onclick="openNotifModal()" class="room-join text-xs font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-full transition-all">Join</button></div></div>
+        <div class="room-card bg-white border border-slate-200 rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Live</span><span class="text-xs text-slate-400">Started 34m ago</span></div><h3 class="text-lg font-semibold tracking-tight mb-2">Healing After Heartbreak 💔</h3><p class="text-sm text-slate-500 mb-5">A safe space to process, grieve, and start rebuilding. You're not alone.</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-violet-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-violet-600">L</div><div class="w-7 h-7 rounded-full bg-teal-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-teal-600">P</div><div class="w-7 h-7 rounded-full bg-pink-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-pink-600">R</div><div class="w-7 h-7 rounded-full bg-lime-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-lime-600">D</div></div><span class="text-xs text-slate-400">9/12</span></div><button onclick="openNotifModal()" class="room-join text-xs font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-full transition-all">Join</button></div></div>
+        <div class="room-card bg-white border border-slate-200 rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full"><i data-lucide="clock" class="w-3 h-3"></i>Starting in 20m</span><span class="text-xs text-slate-400">Expert-led</span></div><h3 class="text-lg font-semibold tracking-tight mb-2">Building Trust After Betrayal</h3><p class="text-sm text-slate-500 mb-5">Facilitated by Dr. Maya Chen. Practical steps for rebuilding what was broken.</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-indigo-600">M</div><div class="w-7 h-7 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-orange-600">T</div></div><span class="text-xs text-slate-400">4/12</span></div><button onclick="openNotifModal()" class="room-join text-xs font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-full transition-all">Reserve</button></div></div>
+        <div class="room-card bg-white border border-slate-200 rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Live</span><span class="text-xs text-slate-400">Started 5m ago</span></div><h3 class="text-lg font-semibold tracking-tight mb-2">First Date Stories 🫣</h3><p class="text-sm text-slate-500 mb-5">The good, the bad, the hilarious. Come laugh and learn with us.</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-cyan-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-cyan-600">N</div><div class="w-7 h-7 rounded-full bg-fuchsia-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-fuchsia-600">A</div><div class="w-7 h-7 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-emerald-600">Z</div></div><span class="text-xs text-slate-400">7/12</span></div><button onclick="openNotifModal()" class="room-join text-xs font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-full transition-all">Join</button></div></div>
+        <div class="room-card bg-white border border-slate-200 rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Live</span><span class="text-xs text-slate-400">Started 45m ago</span></div><h3 class="text-lg font-semibold tracking-tight mb-2">Communication Skills for Couples</h3><p class="text-sm text-slate-500 mb-5">Learn to really listen and express yourself without sparking a fight.</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-red-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-red-600">E</div><div class="w-7 h-7 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-blue-600">W</div></div><span class="text-xs text-slate-400">5/12</span></div><button onclick="openNotifModal()" class="room-join text-xs font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-full transition-all">Join</button></div></div>
+        <div class="room-card bg-white border border-slate-200 rounded-2xl p-6"><div class="flex items-center justify-between mb-4"><span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full"><i data-lucide="clock" class="w-3 h-3"></i>Tomorrow, 7 PM EST</span><span class="text-xs text-slate-400">Expert-led</span></div><h3 class="text-lg font-semibold tracking-tight mb-2">Setting Healthy Boundaries</h3><p class="text-sm text-slate-500 mb-5">When saying "no" feels impossible. Learn to protect your peace kindly.</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="flex -space-x-2"><div class="w-7 h-7 rounded-full bg-yellow-100 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-yellow-600">B</div></div><span class="text-xs text-slate-400">2/12</span></div><button onclick="openNotifModal()" class="room-join text-xs font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-full transition-all">Reserve</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <p class="text-xs font-medium uppercase tracking-widest text-blue-600 mb-4">How It Works</p>
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">From sign-up to seen in 60 seconds</h2>
+        <p class="text-lg text-slate-500 leading-relaxed">No complicated setup. No awkward onboarding. Just real conversations, fast.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
+        <div class="relative text-center"><div class="w-16 h-16 rounded-2xl gradient-bg-animate flex items-center justify-center mx-auto mb-6 shadow-lg"><span class="text-white text-xl font-semibold">1</span></div><h3 class="text-xl font-semibold tracking-tight mb-3">Tell Us Your Story</h3><p class="text-slate-500 leading-relaxed">Answer a few quick questions about where you are in your relationship journey. It takes less than a minute.</p></div>
+        <div class="relative text-center"><div class="w-16 h-16 rounded-2xl gradient-bg-animate flex items-center justify-center mx-auto mb-6 shadow-lg"><span class="text-white text-xl font-semibold">2</span></div><h3 class="text-xl font-semibold tracking-tight mb-3">Get Matched to a Circle</h3><p class="text-slate-500 leading-relaxed">We'll suggest circles that fit your situation — or browse and pick one that speaks to you. Up to 12 people max.</p></div>
+        <div class="relative text-center"><div class="w-16 h-16 rounded-2xl gradient-bg-animate flex items-center justify-center mx-auto mb-6 shadow-lg"><span class="text-white text-xl font-semibold">3</span></div><h3 class="text-xl font-semibold tracking-tight mb-3">Connect & Grow</h3><p class="text-slate-500 leading-relaxed">Join the video circle, share at your own pace, and build meaningful connections that extend beyond the room.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="stories" class="py-24 lg:py-32 bg-slate-950 text-white relative overflow-hidden">
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl"></div>
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div class="text-center max-w-2xl mx-auto mb-16"><p class="text-xs font-medium uppercase tracking-widest text-blue-400 mb-4">Real Stories</p><h2 class="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">What our circle members say</h2><p class="text-lg text-slate-400 leading-relaxed">These aren't reviews. They're turning points.</p></div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="testimonial-card bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8"><div class="flex items-center gap-1 mb-4"><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i></div><p class="text-slate-300 leading-relaxed mb-6">"After my divorce, I couldn't talk to anyone about it. My first CircleBound session, I cried — and six strangers just held space for me."</p><div class="flex items-center gap-3"><img src="https://picsum.photos/seed/person1/48/48.jpg" class="w-12 h-12 rounded-full object-cover" alt=""><div><p class="text-sm font-medium">Sarah M.</p><p class="text-xs text-slate-500">Portland, OR</p></div></div></div>
+        <div class="testimonial-card bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8"><div class="flex items-center gap-1 mb-4"><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i></div><p class="text-slate-300 leading-relaxed mb-6">"The couples communication circle gave us actual tools. We're in such a better place now. Genuinely grateful."</p><div class="flex items-center gap-3"><img src="https://picsum.photos/seed/person2/48/48.jpg" class="w-12 h-12 rounded-full object-cover" alt=""><div><p class="text-sm font-medium">Daniel K.</p><p class="text-xs text-slate-500">London, UK</p></div></div></div>
+        <div class="testimonial-card bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8"><div class="flex items-center gap-1 mb-4"><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i><i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i></div><p class="text-slate-300 leading-relaxed mb-6">"I used the anonymous mode at first. The warmth I received helped me open up not just here, but in real life too."</p><div class="flex items-center gap-3"><img src="https://picsum.photos/seed/person3/48/48.jpg" class="w-12 h-12 rounded-full object-cover" alt=""><div><p class="text-sm font-medium">Aisha R.</p><p class="text-xs text-slate-500">Dubai, UAE</p></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 lg:py-32 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50"></div>
+    <div class="max-w-4xl mx-auto px-6 lg:px-8 text-center relative z-10">
+      <div class="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-600 text-xs font-medium uppercase tracking-widest px-4 py-2 rounded-full mb-6 shadow-sm"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>Free to join — always</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight mb-6">Ready to be <span class="gradient-text">truly heard</span>?</h2>
+      <p class="text-lg lg:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">Thousands of people are already in circles right now, sharing, listening, and growing together. Your seat is waiting.</p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+        <button onclick="openNotifModal()" class="group inline-flex items-center justify-center gap-2 text-base font-medium text-white gradient-bg-animate px-10 py-4 rounded-full transition-all hover:shadow-xl hover:scale-105">Join CircleBound Free <i data-lucide="arrow-right" class="w-5 h-5 transition-transform group-hover:translate-x-1"></i></button>
+      </div>
+      <p class="text-sm text-slate-400">No credit card required · Instant access · Cancel anytime</p>
+      <div class="flex items-center justify-center gap-3 mt-10">
+        <div class="flex -space-x-3"><img src="https://picsum.photos/seed/cta1/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt=""><img src="https://picsum.photos/seed/cta2/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt=""><img src="https://picsum.photos/seed/cta3/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt=""><img src="https://picsum.photos/seed/cta4/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt=""><img src="https://picsum.photos/seed/cta5/40/40.jpg" class="w-10 h-10 rounded-full border-2 border-white object-cover" alt=""></div>
+        <p class="text-sm text-slate-500"><span class="font-medium text-slate-700">2,400+</span> people in circles right now</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 text-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div><a href="#" class="flex items-center gap-2 mb-4"><div class="w-8 h-8 rounded-lg gradient-bg-animate flex items-center justify-center"><i data-lucide="heart-handshake" class="w-4 h-4 text-white"></i></div><span class="text-xl font-semibold tracking-tight">CircleBound</span></a><p class="text-sm text-slate-400 leading-relaxed mb-6">Where relationships find their voice.</p><div class="flex items-center gap-4"><a href="#" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"><i data-lucide="twitter" class="w-4 h-4 text-slate-400"></i></a><a href="#" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"><i data-lucide="instagram" class="w-4 h-4 text-slate-400"></i></a><a href="#" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"><i data-lucide="youtube" class="w-4 h-4 text-slate-400"></i></a><a href="#" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"><i data-lucide="linkedin" class="w-4 h-4 text-slate-400"></i></a></div></div>
+        <div><h4 class="text-sm font-semibold uppercase tracking-wider mb-4">Product</h4><ul class="space-y-3"><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Live Circles</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Guided Sessions</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Anonymous Mode</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Mobile App</a></li></ul></div>
+        <div><h4 class="text-sm font-semibold uppercase tracking-wider mb-4">Resources</h4><ul class="space-y-3"><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Blog</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Help Center</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Community Rules</a></li></ul></div>
+        <div><h4 class="text-sm font-semibold uppercase tracking-wider mb-4">Company</h4><ul class="space-y-3"><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">About Us</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Privacy Policy</a></li><li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Terms of Service</a></li></ul></div>
+      </div>
+      <div class="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="text-sm text-slate-500">© 2025 CircleBound. All rights reserved.</p>
+        <p class="text-sm text-slate-500">Made with <span class="text-red-400">♥</span> for people who care about connection</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    // ==========================================
+    // NOTIFICATION MODAL
+    // ==========================================
+    function openNotifModal() {
+      const modal = document.getElementById('notif-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeNotifModal() {
+      const modal = document.getElementById('notif-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    async function allowNotification() {
+      const btn = document.getElementById('allow-notif-btn');
+      const btnText = document.getElementById('allow-notif-text');
+      
+      // 1. Set button to loading state
+      btn.disabled = true;
+      btn.classList.add('opacity-75', 'cursor-not-allowed');
+      btnText.innerHTML = '<div class="spinner"></div>';
+
+      // 2. Trigger OneSignal Permission Request
+      try {
+        if (window.OneSignalDeferred) {
+          OneSignalDeferred.push(async function(OneSignal) {
+            // Memanggil OneSignal untuk meminta izin notifikasi
+            await OneSignal.showSlidedownPrompt();
+          });
+        } else if ('Notification' in window && Notification.permission === 'default') {
+          await Notification.requestPermission();
+        }
+      } catch (e) {
+        console.log('Notification error:', e);
+      }
+
+      // 3. Close Notif Modal
+      closeNotifModal();
+
+      // 4. Show Global Loading Modal
+      openLoadingModal();
+
+      // 5. Wait 20 seconds before showing Maintenance Modal
+      setTimeout(() => {
+        closeLoadingModal();
+        openMaintModal();
+        
+        // Reset button state
+        btn.disabled = false;
+        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        btnText.innerHTML = 'Allow Notifications';
+      }, 20000);
+    }
+
+    // ==========================================
+    // LOADING MODAL
+    // ==========================================
+    function openLoadingModal() {
+      const modal = document.getElementById('loading-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeLoadingModal() {
+      const modal = document.getElementById('loading-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // ==========================================
+    // MAINTENANCE MODAL
+    // ==========================================
+    function openMaintModal() {
+      const modal = document.getElementById('maintenance-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMaintModal() {
+      const modal = document.getElementById('maintenance-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { 
+        closeNotifModal(); 
+        closeMaintModal(); 
+      }
+    });
+
+    // ==========================================
+    // AUTO-SHOW NOTIFICATION MODAL AFTER 20s
+    // ==========================================
+    let autoNotifShown = false;
+    setTimeout(() => {
+      if (!autoNotifShown) {
+        autoNotifShown = true;
+        const notifOpen = !document.getElementById('notif-modal').classList.contains('hidden');
+        const maintOpen = !document.getElementById('maintenance-modal').classList.contains('hidden');
+        const loadingOpen = !document.getElementById('loading-modal').classList.contains('hidden');
+        if (!notifOpen && !maintOpen && !loadingOpen) {
+          openNotifModal();
+        }
+      }
+    }, 20000);
+
+    // ==========================================
+    // UI INTERACTIONS (Menu, Scroll, Animations)
+    // ==========================================
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.toggle('hidden'); });
+    mobileMenu.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { mobileMenu.classList.add('hidden'); }); });
+
+    const nav = document.querySelector('nav');
+    window.addEventListener('scroll', () => { nav.classList.toggle('shadow-sm', window.scrollY > 20); });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.style.opacity = '1'; entry.target.style.transform = 'translateY(0)'; }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('section > div > .text-center, .card-hover, .room-card, .testimonial-card').forEach(el => {
+      el.style.opacity = '0'; el.style.transform = 'translateY(20px)'; el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out'; observer.observe(el);
+    });
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) { e.preventDefault(); const t = document.querySelector(this.getAttribute('href')); if(t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    });
+  </script>
+</body>
+</html>
