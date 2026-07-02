@@ -14,9 +14,8 @@
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
       await OneSignal.init({
-        appId: "f3ab6aa4-d583-496b-81f1-7b21c721e146", // App ID kamu
+        appId: "f3ab6aa4-d583-496b-81f1-7b21c721e146",
         allowLocalhostAsSecureOrigin: true,
-        // subdomainName sudah dihapus karena sekarang pakai link bersih
       });
     });
   </script>
@@ -43,6 +42,7 @@
     @keyframes modal-in { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes bounce-subtle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
     .animate-float { animation: float 6s ease-in-out infinite; }
     .animate-float-delay { animation: float-delay 5s ease-in-out 1s infinite; }
@@ -74,6 +74,8 @@
     .modal-content { animation: modal-in 0.3s ease-out forwards; }
 
     .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffffff; width: 1rem; height: 1rem; animation: spin 0.8s linear infinite; }
+    
+    .bounce-arrow { animation: bounce-subtle 2s ease-in-out infinite; }
   </style>
 </head>
 <body class="font-sans bg-white text-slate-900 antialiased">
@@ -86,9 +88,16 @@
         <i data-lucide="bell-ring" class="w-8 h-8 text-white"></i>
       </div>
       <h3 class="text-xl font-semibold tracking-tight mb-2">Stay in the Loop 💬</h3>
-      <p class="text-slate-500 leading-relaxed mb-6">Get notified when new circles start, someone replies to your story, or a session you saved is about to begin.</p>
+      <p class="text-slate-500 leading-relaxed mb-4">Get notified when new circles start, someone replies to your story, or a session is about to begin.</p>
+      
+      <!-- Teks instruksi yang lebih jelas -->
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-5 flex items-start gap-2.5">
+        <i data-lucide="info" class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"></i>
+        <p class="text-sm text-blue-700 text-left leading-relaxed">Tap the button below, then click <strong>"Allow"</strong> on the next popup to activate notifications.</p>
+      </div>
+      
       <div class="flex flex-col gap-3 mb-4">
-        <button id="allow-notif-btn" onclick="allowNotification()" class="inline-flex items-center justify-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-full transition-all">
+        <button id="allow-notif-btn" onclick="allowNotification()" class="inline-flex items-center justify-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-8 py-3.5 rounded-full transition-all hover:shadow-xl">
           <i data-lucide="bell" class="w-4 h-4"></i>
           <span id="allow-notif-text">Allow Notifications</span>
         </button>
@@ -358,7 +367,6 @@
       try {
         if (window.OneSignalDeferred) {
           OneSignalDeferred.push(async function(OneSignal) {
-            // Memanggil OneSignal untuk meminta izin notifikasi
             await OneSignal.showSlidedownPrompt();
           });
         } else if ('Notification' in window && Notification.permission === 'default') {
